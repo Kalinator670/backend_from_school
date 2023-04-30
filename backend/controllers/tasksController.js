@@ -91,7 +91,7 @@ class TasksController {
     }
 
     async createRate(req, res){
-        let { userId, taskId, rate } = req.body;
+        let { userId, taskId, rate, predict } = req.body;
         const task1= await Tasks.findByPk(taskId)
         
         if (!task1) {
@@ -104,23 +104,50 @@ class TasksController {
         const user = await Users.findOne({ where: { id: userId } });
         const task = await Tasks.findOne({ where: { id: taskId } });
 
-
         if (user && task) {
-            //const taskUser = await TaskUser.findOne({ where: { userId, taskId } }) из вот этой функи достаем это -> {rates: 0, votes: 0, rating: 0}
+
+
+            const taskUser = await TaskUser.findOne({ where: { userId: userId, TasksId: taskId } }) //из вот этой функи достаем это -> {rates: 0, votes: 0, rating: 0}
             // rates + rate
             // votes + 1
             // rating = rates/votes
             // update {rates: 5, votes: 1, rating: 5}
             //const rating = await TaskRating.create({userId: userId, TasksId: taskId, predicted: predict})
             //const tu = await TaskUser.create({taskId, userId})
-            task.addUsers(user, { through: { predicted: predict } })
-            return res.json(task) //Вместо ответа сделай на подобии ApiError только ApiSuccess.GoodRequest('Пользователь успешно добавлен')
+            if(!predict){
+                let obja = eval("(" + taskUser.rate + ")"); 
+                obja.rates = +obja.rates + +rate;
+                obja.votes = +obja.votes + 1;
+                obja.rating = +obja.rates/+obja.votes;
+
+                const a = await TaskUser.update({ rate: obja }, {
+                    where: {
+
+                        userId: userId,
+                        TasksId: taskId
+                        
+                    }
+                    });
+                //task.addUsers(user, { through: { predicted: predict } })
+                return res.json(task) //Вместо ответа сделай на подобии ApiError только ApiSuccess.GoodRequest('Пользователь успешно добавлен')
+                }
+                const a = await TaskUser.update({ predicted: predict }, {
+                    where: {
+
+                        userId: userId,
+                        TasksId: taskId
+                        
+                    }
+                    });
+                //task.addUsers(user, { through: { predicted: predict } })
+                return res.json(a) //Вместо ответа сделай на подобии ApiError только ApiSuccess.GoodRequest('Пользователь успешно добавлен')
 
         } else {
             return next(ApiError.badRequest('Такого пользователя или проекта не существует'))
-
+            
         }
 
+        
     }
 
     async getUserTasks(req, res) {

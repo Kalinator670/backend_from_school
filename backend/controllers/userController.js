@@ -176,5 +176,12 @@ class UserController {
         }
       }
 
+      async get_all_users(rea, res){
+
+            const users = await Users.findAll(); 
+            return res.json(users);
+
+      }
+
 }
 module.exports = new UserController()
